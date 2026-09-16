@@ -134,6 +134,17 @@ public class MenuService {
     }
 
     @Transactional
+    public VariationResponse updateVariation(Long variationId, UpdateVariationRequest request) {
+        MenuVariation variation = menuVariationRepository.findById(variationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Variation not found"));
+
+        variation.setVariationName(request.getVariationName());
+        variation.setAdditionalPrice(request.getAdditionalPrice());
+
+        return mapToVariationResponse(menuVariationRepository.save(variation));
+    }
+
+    @Transactional
     public void deleteVariation(Long variationId) {
         if (!menuVariationRepository.existsById(variationId)) {
             throw new ResourceNotFoundException("Variation not found");

@@ -22,7 +22,9 @@ export default function MenuManagement() {
   const [showItemModal, setShowItemModal] = useState(false);
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [showVariationModal, setShowVariationModal] = useState(false);
+  const [showEditVariationModal, setShowEditVariationModal] = useState(false);
   const [selectedItemForVariation, setSelectedItemForVariation] = useState(null);
+  const [editVariationData, setEditVariationData] = useState({ variationId: null, variationName: '', additionalPrice: 0 });
 
   // Form states
   const [newCategory, setNewCategory] = useState({ categoryName: '', description: '' });
@@ -230,6 +232,25 @@ export default function MenuManagement() {
     }
   };
 
+  const handleUpdateVariation = async (e) => {
+    e.preventDefault();
+    if (!editVariationData.variationId) return;
+    try {
+      const res = await axiosClient.put(`/variations/${editVariationData.variationId}`, {
+        variationName: editVariationData.variationName,
+        additionalPrice: editVariationData.additionalPrice,
+      });
+      if (res.success) {
+        setShowEditVariationModal(false);
+        setEditVariationData({ variationId: null, variationName: '', additionalPrice: 0 });
+        alert('Size variation updated!');
+        loadBranchMenu();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error updating variation');
+    }
+  };
+
   const filteredItems = menuItems.filter((item) => {
     const matchesSearch =
       item.foodName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -426,6 +447,20 @@ export default function MenuManagement() {
                               <span className="font-bold text-stone-900 text-[11px]">
                                 +LKR {Number(v.additionalPrice).toFixed(2)}
                               </span>
+                              <button
+                                onClick={() => {
+                                  setEditVariationData({
+                                    variationId: v.variationId,
+                                    variationName: v.variationName,
+                                    additionalPrice: v.additionalPrice,
+                                  });
+                                  setShowEditVariationModal(true);
+                                }}
+                                className="text-stone-400 hover:text-stone-700 p-0.5"
+                                title="Edit variation"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 onClick={() => handleDeleteVariation(v.variationId)}
                                 className="text-rose-400 hover:text-rose-600 p-0.5"
@@ -732,6 +767,54 @@ export default function MenuManagement() {
                 </button>
                 <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded-xl font-bold">
                   Add Variation
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Variation */}
+      {showEditVariationModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-sm w-full rounded-3xl p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-stone-900 mb-1">Edit Portion Variation</h3>
+            <p className="text-xs text-stone-500 mb-3">Update size option details</p>
+            <form onSubmit={handleUpdateVariation} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Variation Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editVariationData.variationName}
+                  onChange={(e) => setEditVariationData({ ...editVariationData, variationName: e.target.value })}
+                  placeholder="e.g. Large (12-inch)"
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Additional Price (LKR)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  value={editVariationData.additionalPrice}
+                  onChange={(e) => setEditVariationData({ ...editVariationData, additionalPrice: Number(e.target.value) })}
+                  placeholder="500.00"
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditVariationModal(false)}
+                  className="px-3 py-1.5 bg-stone-100 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded-xl font-bold">
+                  Save Changes
                 </button>
               </div>
             </form>

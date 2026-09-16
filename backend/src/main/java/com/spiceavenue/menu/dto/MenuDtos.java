@@ -96,6 +96,19 @@ public class MenuDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class UpdateVariationRequest {
+        @NotBlank(message = "Variation name is required")
+        private String variationName;
+
+        @NotNull(message = "Additional price is required")
+        @DecimalMin(value = "0.0", message = "Additional price cannot be negative")
+        private BigDecimal additionalPrice;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class VariationResponse {
         private Long variationId;
         private Long itemId;

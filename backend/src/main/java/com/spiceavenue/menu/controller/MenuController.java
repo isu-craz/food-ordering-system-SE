@@ -90,6 +90,15 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.success("Variation added successfully", variation));
     }
 
+    @PutMapping("/variations/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_MANAGER', 'ADMIN')")
+    @Operation(summary = "Update an item variation")
+    public ResponseEntity<ApiResponse<VariationResponse>> updateVariation(
+            @PathVariable Long id, @Valid @RequestBody UpdateVariationRequest request) {
+        VariationResponse variation = menuService.updateVariation(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Variation updated successfully", variation));
+    }
+
     @DeleteMapping("/variations/{id}")
     @PreAuthorize("hasAnyRole('BRANCH_MANAGER', 'ADMIN')")
     @Operation(summary = "Delete an item variation")
