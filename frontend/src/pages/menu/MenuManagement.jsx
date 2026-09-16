@@ -19,12 +19,14 @@ export default function MenuManagement() {
 
   // Modals
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [showVariationModal, setShowVariationModal] = useState(false);
   const [showEditVariationModal, setShowEditVariationModal] = useState(false);
   const [selectedItemForVariation, setSelectedItemForVariation] = useState(null);
   const [editVariationData, setEditVariationData] = useState({ variationId: null, variationName: '', additionalPrice: 0 });
+  const [editCategoryData, setEditCategoryData] = useState({ categoryId: null, categoryName: '', description: '' });
 
   // Form states
   const [newCategory, setNewCategory] = useState({ categoryName: '', description: '' });
@@ -196,11 +198,44 @@ export default function MenuManagement() {
   const handleDeleteMenuItem = async (itemId) => {
     if (!window.confirm('Are you sure you want to deactivate this menu item?')) return;
     try {
-      await axiosClient.put(`/menu-items/${itemId}`, { status: 'INACTIVE' });
+      await axiosClient.delete(`/menu-items/${itemId}`);
       setMenuItems((prev) => prev.filter((i) => i.itemId !== itemId));
       alert('Menu item deactivated successfully!');
+      loadBranchMenu();
     } catch (err) {
-      setMenuItems((prev) => prev.filter((i) => i.itemId !== itemId));
+      alert(err.response?.data?.message || 'Error deactivating menu item');
+    }
+  };
+
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
+    if (!editCategoryData.categoryId) return;
+    try {
+      const res = await axiosClient.put(`/categories/${editCategoryData.categoryId}`, {
+        categoryName: editCategoryData.categoryName,
+        description: editCategoryData.description,
+      });
+      if (res.success) {
+        setShowEditCategoryModal(false);
+        alert('Category updated successfully!');
+        loadBranchMenu();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error updating category');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId, categoryName) => {
+    if (!window.confirm(`Deactivate category "${categoryName}"?`)) return;
+    try {
+      const res = await axiosClient.delete(`/categories/${categoryId}`);
+      if (res.success) {
+        if (selectedCategory === categoryId) setSelectedCategory('ALL');
+        alert('Category deactivated!');
+        loadBranchMenu();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error deactivating category');
     }
   };
 
@@ -335,22 +370,44 @@ export default function MenuManagement() {
             const isSelected = selectedCategory === c.categoryId;
             const categoryItemCount = menuItems.filter(m => m.categoryId === c.categoryId).length;
             return (
-              <button
+              <div
                 key={c.categoryId}
-                onClick={() => setSelectedCategory(c.categoryId)}
-                className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20 ring-2 ring-orange-500/30'
                     : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 hover:border-stone-300'
                 }`}
               >
-                <span>{c.categoryName}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isSelected ? 'bg-orange-700 text-white' : 'bg-stone-100 text-stone-500'
-                }`}>
-                  {categoryItemCount}
-                </span>
-              </button>
+                <button onClick={() => setSelectedCategory(c.categoryId)} className="flex items-center gap-1.5">
+                  <span>{c.categoryName}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    isSelected ? 'bg-orange-700 text-white' : 'bg-stone-100 text-stone-500'
+                  }`}>
+                    {categoryItemCount}
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditCategoryData({ categoryId: c.categoryId, categoryName: c.categoryName, description: c.description || '' });
+                    setShowEditCategoryModal(true);
+                  }}
+                  className={`p-0.5 rounded hover:bg-black/10 ${isSelected ? 'text-white' : 'text-stone-400 hover:text-stone-700'}`}
+                  title="Edit Category"
+                >
+                  <Edit3 className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCategory(c.categoryId, c.categoryName);
+                  }}
+                  className={`p-0.5 rounded hover:bg-black/10 ${isSelected ? 'text-white' : 'text-stone-400 hover:text-rose-600'}`}
+                  title="Delete Category"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
             );
           })}
         </div>
@@ -552,6 +609,50 @@ export default function MenuManagement() {
                 </button>
                 <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded-xl font-bold">
                   Create Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Category */}
+      {showEditCategoryModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-sm w-full rounded-3xl p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-stone-900 mb-3">Edit Food Category</h3>
+            <form onSubmit={handleUpdateCategory} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Category Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editCategoryData.categoryName}
+                  onChange={(e) => setEditCategoryData({ ...editCategoryData, categoryName: e.target.value })}
+                  placeholder="e.g. Starters, Main Course, Drinks"
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Description</label>
+                <textarea
+                  rows="2"
+                  value={editCategoryData.description}
+                  onChange={(e) => setEditCategoryData({ ...editCategoryData, description: e.target.value })}
+                  placeholder="Category details..."
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditCategoryModal(false)}
+                  className="px-3 py-1.5 bg-stone-100 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded-xl font-bold">
+                  Save Changes
                 </button>
               </div>
             </form>

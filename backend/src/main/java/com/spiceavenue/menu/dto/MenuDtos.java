@@ -33,6 +33,16 @@ public class MenuDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class UpdateCategoryRequest {
+        private String categoryName;
+        private String description;
+        private EntityStatus status;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class CategoryResponse {
         private Long categoryId;
         private Long branchId;

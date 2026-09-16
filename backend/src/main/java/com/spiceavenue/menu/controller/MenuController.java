@@ -38,6 +38,23 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.success("Category created successfully", category));
     }
 
+    @PutMapping("/categories/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_MANAGER', 'ADMIN')")
+    @Operation(summary = "Update category details")
+    public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
+            @PathVariable Long id, @RequestBody UpdateCategoryRequest request) {
+        CategoryResponse category = menuService.updateCategory(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Category updated successfully", category));
+    }
+
+    @DeleteMapping("/categories/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_MANAGER', 'ADMIN')")
+    @Operation(summary = "Deactivate/Delete a category")
+    public ResponseEntity<ApiResponse<String>> deleteCategory(@PathVariable Long id) {
+        menuService.deleteCategory(id);
+        return ResponseEntity.ok(ApiResponse.success("Category deactivated successfully", null));
+    }
+
     // Menu Items
     @GetMapping("/branches/{branchId}/menu-items")
     @Operation(summary = "Get menu items for a branch")
@@ -69,6 +86,14 @@ public class MenuController {
             @PathVariable Long id, @RequestBody UpdateMenuItemRequest request) {
         MenuItemResponse item = menuService.updateMenuItem(id, request);
         return ResponseEntity.ok(ApiResponse.success("Menu item updated successfully", item));
+    }
+
+    @DeleteMapping("/menu-items/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_MANAGER', 'ADMIN')")
+    @Operation(summary = "Deactivate/Delete a menu item")
+    public ResponseEntity<ApiResponse<String>> deleteMenuItem(@PathVariable Long id) {
+        menuService.deleteMenuItem(id);
+        return ResponseEntity.ok(ApiResponse.success("Menu item deactivated successfully", null));
     }
 
     @PatchMapping("/menu-items/{id}/availability")

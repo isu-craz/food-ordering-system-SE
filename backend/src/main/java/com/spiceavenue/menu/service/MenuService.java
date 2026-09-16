@@ -55,6 +55,32 @@ public class MenuService {
         return mapToCategoryResponse(categoryRepository.save(category));
     }
 
+    @Transactional
+    public CategoryResponse updateCategory(Long categoryId, UpdateCategoryRequest request) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
+        if (request.getCategoryName() != null && !request.getCategoryName().isBlank()) {
+            category.setCategoryName(request.getCategoryName());
+        }
+        if (request.getDescription() != null) {
+            category.setDescription(request.getDescription());
+        }
+        if (request.getStatus() != null) {
+            category.setStatus(request.getStatus());
+        }
+
+        return mapToCategoryResponse(categoryRepository.save(category));
+    }
+
+    @Transactional
+    public void deleteCategory(Long categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+        category.setStatus(EntityStatus.INACTIVE);
+        categoryRepository.save(category);
+    }
+
     public List<MenuItemResponse> getMenuItemsByBranch(Long branchId, boolean onlyActive) {
         List<MenuItem> items = onlyActive
                 ? menuItemRepository.findByBranch_BranchIdAndStatus(branchId, EntityStatus.ACTIVE)
@@ -115,6 +141,14 @@ public class MenuService {
         MenuItem item = menuItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
         item.setAvailable(isAvailable);
+        menuItemRepository.save(item);
+    }
+
+    @Transactional
+    public void deleteMenuItem(Long itemId) {
+        MenuItem item = menuItemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
+        item.setStatus(EntityStatus.INACTIVE);
         menuItemRepository.save(item);
     }
 
