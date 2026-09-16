@@ -196,14 +196,14 @@ export default function MenuManagement() {
   };
 
   const handleDeleteMenuItem = async (itemId) => {
-    if (!window.confirm('Are you sure you want to deactivate this menu item?')) return;
+    if (!window.confirm('Are you sure you want to delete this menu item?')) return;
     try {
       await axiosClient.delete(`/menu-items/${itemId}`);
       setMenuItems((prev) => prev.filter((i) => i.itemId !== itemId));
-      alert('Menu item deactivated successfully!');
+      alert('Menu item deleted successfully!');
       loadBranchMenu();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error deactivating menu item');
+      alert(err.response?.data?.message || 'Error deleting menu item');
     }
   };
 
@@ -226,16 +226,16 @@ export default function MenuManagement() {
   };
 
   const handleDeleteCategory = async (categoryId, categoryName) => {
-    if (!window.confirm(`Deactivate category "${categoryName}"?`)) return;
+    if (!window.confirm(`Delete category "${categoryName}"?`)) return;
     try {
       const res = await axiosClient.delete(`/categories/${categoryId}`);
       if (res.success) {
         if (selectedCategory === categoryId) setSelectedCategory('ALL');
-        alert('Category deactivated!');
+        alert('Category deleted successfully!');
         loadBranchMenu();
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Error deactivating category');
+      alert(err.response?.data?.message || 'Error deleting category');
     }
   };
 

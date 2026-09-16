@@ -77,8 +77,13 @@ public class MenuService {
     public void deleteCategory(Long categoryId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
-        category.setStatus(EntityStatus.INACTIVE);
-        categoryRepository.save(category);
+        try {
+            categoryRepository.delete(category);
+            categoryRepository.flush();
+        } catch (Exception e) {
+            category.setStatus(EntityStatus.INACTIVE);
+            categoryRepository.save(category);
+        }
     }
 
     public List<MenuItemResponse> getMenuItemsByBranch(Long branchId, boolean onlyActive) {
@@ -148,8 +153,13 @@ public class MenuService {
     public void deleteMenuItem(Long itemId) {
         MenuItem item = menuItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
-        item.setStatus(EntityStatus.INACTIVE);
-        menuItemRepository.save(item);
+        try {
+            menuItemRepository.delete(item);
+            menuItemRepository.flush();
+        } catch (Exception e) {
+            item.setStatus(EntityStatus.INACTIVE);
+            menuItemRepository.save(item);
+        }
     }
 
     @Transactional
@@ -180,10 +190,15 @@ public class MenuService {
 
     @Transactional
     public void deleteVariation(Long variationId) {
-        if (!menuVariationRepository.existsById(variationId)) {
-            throw new ResourceNotFoundException("Variation not found");
+        MenuVariation variation = menuVariationRepository.findById(variationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Variation not found"));
+        try {
+            menuVariationRepository.delete(variation);
+            menuVariationRepository.flush();
+        } catch (Exception e) {
+            variation.setStatus(EntityStatus.INACTIVE);
+            menuVariationRepository.save(variation);
         }
-        menuVariationRepository.deleteById(variationId);
     }
 
     public List<MenuItemResponse> searchMenuItems(Long branchId, String query) {
