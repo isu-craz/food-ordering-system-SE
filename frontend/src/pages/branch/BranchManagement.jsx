@@ -173,6 +173,8 @@ export default function BranchManagement() {
         return t.length === 5 ? `${t}:00` : t;
       };
 
+      const assignedManager = branchManagers.find(m => String(m.userId) === String(editBranchData.managerId));
+
       const payload = {
         branchName: editBranchData.branchName,
         streetAddress: editBranchData.streetAddress,
@@ -182,11 +184,12 @@ export default function BranchManagement() {
         closingTime: formatTime(editBranchData.closingTime),
         status: editBranchData.status,
         managerId: editBranchData.managerId ? Number(editBranchData.managerId) : null,
+        managerName: assignedManager ? assignedManager.fullName : 'Unassigned',
+        managerEmail: assignedManager ? assignedManager.email : '',
         assignedRiderIds: editBranchData.assignedRiderIds || [],
       };
 
       const res = await axiosClient.put(`/branches/${editBranchData.branchId}`, payload);
-      const assignedManager = branchManagers.find(m => String(m.userId) === String(editBranchData.managerId));
       
       const backendBranch = (res && res.data) ? res.data : null;
       const mergedBranch = {

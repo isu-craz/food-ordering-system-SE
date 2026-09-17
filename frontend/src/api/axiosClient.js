@@ -80,7 +80,13 @@ axiosClient.interceptors.response.use(
           const targetId = branchIdMatch ? Number(branchIdMatch[1]) : (body.branchId || 1);
           const idx = mockBranches.findIndex(b => b.branchId === targetId);
           if (idx !== -1) {
-            mockBranches[idx] = { ...mockBranches[idx], ...body };
+            const manager = mockUsersList.find(u => Number(u.userId) === Number(body.managerId));
+            mockBranches[idx] = {
+              ...mockBranches[idx],
+              ...body,
+              managerName: manager ? manager.fullName : (body.managerName || (body.managerId ? 'Assigned Manager' : 'Unassigned')),
+              managerEmail: manager ? manager.email : (body.managerEmail || ''),
+            };
             return { success: true, message: 'Branch updated successfully', data: mockBranches[idx] };
           }
         }
