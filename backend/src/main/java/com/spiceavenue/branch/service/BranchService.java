@@ -127,6 +127,15 @@ public class BranchService {
                 if (manager.getRole() != UserRole.BRANCH_MANAGER) {
                     throw new BadRequestException("Selected user is not a BRANCH_MANAGER");
                 }
+
+                // If this manager is currently managing another branch, clear it from that branch
+                Optional<Branch> prevManagedBranchOpt = branchRepository.findByManager_UserId(manager.getUserId());
+                if (prevManagedBranchOpt.isPresent() && !prevManagedBranchOpt.get().getBranchId().equals(branchId)) {
+                    Branch prevManagedBranch = prevManagedBranchOpt.get();
+                    prevManagedBranch.setManager(null);
+                    branchRepository.save(prevManagedBranch);
+                }
+
                 if (branch.getManager() != null && !branch.getManager().getUserId().equals(manager.getUserId())) {
                     User oldManager = branch.getManager();
                     oldManager.setBranch(null);
@@ -223,8 +232,10 @@ public class BranchService {
                 branch.getDeliveryAreas().stream().map(this::mapToDeliveryAreaResponse).collect(Collectors.toList()) :
                 List.of();
 
-        List<User> riders = userRepository.findByRoleAndBranch_BranchId(UserRole.RIDER, branch.getBranchId());
-        List<Long> assignedRiderIds = riders.stream().map(User::getUserId).collect(Collectors.toList());
+        List<Long> assignedRiderIds = (branch.getAssignedRiderIds() != null && !branch.getAssignedRiderIds().isEmpty())
+                ? new ArrayList<>(branch.getAssignedRiderIds())
+                : userRepository.findByRoleAndBranch_BranchId(UserRole.RIDER, branch.getBranchId())
+                        .stream().map(User::getUserId).collect(Collectors.toList());
 
         return BranchResponse.builder()
                 .branchId(branch.getBranchId())
@@ -235,7 +246,8 @@ public class BranchService {
                 .openingTime(branch.getOpeningTime())
                 .closingTime(branch.getClosingTime())
                 .managerId(branch.getManager() != null ? branch.getManager().getUserId() : null)
-                .managerName(branch.getManager() != null ? branch.getManager().getFullName() : null)
+                .managerName(branch.getManager() != null ? branch.getManager().getFullName() : "Unassigned")
+                .managerEmail(branch.getManager() != null ? branch.getManager().getEmail() : "")
                 .status(branch.getStatus())
                 .deliveryAreas(areas)
                 .assignedRiderIds(assignedRiderIds)

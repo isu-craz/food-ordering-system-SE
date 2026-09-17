@@ -73,6 +73,7 @@ public class BranchDtos {
         private LocalTime closingTime;
         private Long managerId;
         private String managerName;
+        private String managerEmail;
         private EntityStatus status;
         private List<DeliveryAreaResponse> deliveryAreas;
         private List<Long> assignedRiderIds;
