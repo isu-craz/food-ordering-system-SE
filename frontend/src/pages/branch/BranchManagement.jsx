@@ -168,8 +168,25 @@ export default function BranchManagement() {
   const handleUpdateBranch = async (e) => {
     e.preventDefault();
     try {
+      const formatTime = (t) => {
+        if (!t) return '08:00:00';
+        return t.length === 5 ? `${t}:00` : t;
+      };
+
+      const payload = {
+        branchName: editBranchData.branchName,
+        streetAddress: editBranchData.streetAddress,
+        contactNumber: editBranchData.contactNumber,
+        email: editBranchData.email,
+        openingTime: formatTime(editBranchData.openingTime),
+        closingTime: formatTime(editBranchData.closingTime),
+        status: editBranchData.status,
+        managerId: editBranchData.managerId ? Number(editBranchData.managerId) : null,
+      };
+
+      const res = await axiosClient.put(`/branches/${editBranchData.branchId}`, payload);
       const assignedManager = branchManagers.find(m => String(m.userId) === String(editBranchData.managerId));
-      const updatedPayload = {
+      const updatedLocal = {
         ...selectedBranch,
         ...editBranchData,
         managerName: assignedManager ? assignedManager.fullName : (editBranchData.managerId ? 'Assigned' : 'Unassigned'),
@@ -177,18 +194,15 @@ export default function BranchManagement() {
         managerId: editBranchData.managerId ? Number(editBranchData.managerId) : null,
       };
 
-      try {
-        await axiosClient.put(`/branches/${editBranchData.branchId}`, updatedPayload);
-      } catch (err) {
-        console.warn('Backend update endpoint unavailable, updating local state');
+      setBranches(prev => prev.map(b => b.branchId === editBranchData.branchId ? (res.data || updatedLocal) : b));
+      if (selectedBranch?.branchId === editBranchData.branchId) {
+        setSelectedBranch(res.data || updatedLocal);
       }
-
-      setBranches(prev => prev.map(b => b.branchId === editBranchData.branchId ? updatedPayload : b));
-      setSelectedBranch(updatedPayload);
       setShowEditModal(false);
       alert('Branch details and manager assignment updated successfully!');
+      fetchBranches();
     } catch (err) {
-      alert('Failed to update branch details.');
+      alert(err.response?.data?.message || 'Failed to update branch details.');
     }
   };
 

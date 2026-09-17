@@ -87,16 +87,39 @@ public class BranchService {
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found with ID: " + branchId));
 
-        if (request.getStreetAddress() != null) branch.setStreetAddress(request.getStreetAddress());
-        if (request.getContactNumber() != null) branch.setContactNumber(request.getContactNumber());
-        if (request.getEmail() != null) branch.setEmail(request.getEmail());
-        if (request.getOpeningTime() != null) branch.setOpeningTime(request.getOpeningTime());
-        if (request.getClosingTime() != null) branch.setClosingTime(request.getClosingTime());
-        if (request.getStatus() != null) branch.setStatus(request.getStatus());
+        if (request.getBranchName() != null && !request.getBranchName().isBlank()) {
+            branch.setBranchName(request.getBranchName());
+        }
+        if (request.getStreetAddress() != null && !request.getStreetAddress().isBlank()) {
+            branch.setStreetAddress(request.getStreetAddress());
+        }
+        if (request.getContactNumber() != null && !request.getContactNumber().isBlank()) {
+            branch.setContactNumber(request.getContactNumber());
+        }
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            branch.setEmail(request.getEmail());
+        }
+        if (request.getOpeningTime() != null) {
+            branch.setOpeningTime(request.getOpeningTime());
+        }
+        if (request.getClosingTime() != null) {
+            branch.setClosingTime(request.getClosingTime());
+        }
+        if (request.getStatus() != null) {
+            branch.setStatus(request.getStatus());
+        }
 
         if (request.getManagerId() != null) {
             User manager = userRepository.findById(request.getManagerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Manager user not found"));
+            if (manager.getRole() != UserRole.BRANCH_MANAGER) {
+                throw new BadRequestException("Selected user is not a BRANCH_MANAGER");
+            }
+            if (branch.getManager() != null && !branch.getManager().getUserId().equals(manager.getUserId())) {
+                User oldManager = branch.getManager();
+                oldManager.setBranch(null);
+                userRepository.save(oldManager);
+            }
             branch.setManager(manager);
             manager.setBranch(branch);
             userRepository.save(manager);

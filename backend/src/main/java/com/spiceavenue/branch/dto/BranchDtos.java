@@ -47,6 +47,7 @@ public class BranchDtos {
     @AllArgsConstructor
     @Builder
     public static class UpdateBranchRequest {
+        private String branchName;
         private String streetAddress;
         private String contactNumber;
         private String email;
