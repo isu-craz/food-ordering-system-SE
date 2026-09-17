@@ -182,6 +182,7 @@ export default function BranchManagement() {
         closingTime: formatTime(editBranchData.closingTime),
         status: editBranchData.status,
         managerId: editBranchData.managerId ? Number(editBranchData.managerId) : null,
+        assignedRiderIds: editBranchData.assignedRiderIds || [],
       };
 
       const res = await axiosClient.put(`/branches/${editBranchData.branchId}`, payload);
@@ -192,6 +193,7 @@ export default function BranchManagement() {
         ...selectedBranch,
         ...editBranchData,
         ...(backendBranch || {}),
+        assignedRiderIds: editBranchData.assignedRiderIds || (backendBranch?.assignedRiderIds || []),
         managerName: assignedManager ? assignedManager.fullName : (backendBranch?.managerName || (editBranchData.managerId ? 'Assigned' : 'Unassigned')),
         managerEmail: assignedManager ? assignedManager.email : (backendBranch?.managerEmail || ''),
         managerId: editBranchData.managerId ? Number(editBranchData.managerId) : null,

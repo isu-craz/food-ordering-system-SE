@@ -40,6 +40,7 @@ public class BranchDtos {
         private LocalTime closingTime;
 
         private Long managerId;
+        private List<Long> assignedRiderIds;
     }
 
     @Data
@@ -55,6 +56,7 @@ public class BranchDtos {
         private LocalTime closingTime;
         private EntityStatus status;
         private Long managerId;
+        private List<Long> assignedRiderIds;
     }
 
     @Data
@@ -73,6 +75,7 @@ public class BranchDtos {
         private String managerName;
         private EntityStatus status;
         private List<DeliveryAreaResponse> deliveryAreas;
+        private List<Long> assignedRiderIds;
     }
 
     @Data

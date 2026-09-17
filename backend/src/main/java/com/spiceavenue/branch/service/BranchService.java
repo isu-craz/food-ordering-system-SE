@@ -79,6 +79,15 @@ public class BranchService {
             manager.setBranch(savedBranch);
             userRepository.save(manager);
         }
+        if (request.getAssignedRiderIds() != null && !request.getAssignedRiderIds().isEmpty()) {
+            List<User> riders = userRepository.findAllById(request.getAssignedRiderIds());
+            for (User r : riders) {
+                if (r.getRole() == UserRole.RIDER) {
+                    r.setBranch(savedBranch);
+                    userRepository.save(r);
+                }
+            }
+        }
         return mapToBranchResponse(savedBranch);
     }
 
@@ -123,6 +132,25 @@ public class BranchService {
             branch.setManager(manager);
             manager.setBranch(branch);
             userRepository.save(manager);
+        }
+
+        if (request.getAssignedRiderIds() != null) {
+            List<User> currentRiders = userRepository.findByRoleAndBranch_BranchId(UserRole.RIDER, branch.getBranchId());
+            for (User r : currentRiders) {
+                if (!request.getAssignedRiderIds().contains(r.getUserId())) {
+                    r.setBranch(null);
+                    userRepository.save(r);
+                }
+            }
+            if (!request.getAssignedRiderIds().isEmpty()) {
+                List<User> newRiders = userRepository.findAllById(request.getAssignedRiderIds());
+                for (User r : newRiders) {
+                    if (r.getRole() == UserRole.RIDER) {
+                        r.setBranch(branch);
+                        userRepository.save(r);
+                    }
+                }
+            }
         }
 
         return mapToBranchResponse(branchRepository.save(branch));
@@ -181,6 +209,9 @@ public class BranchService {
                 branch.getDeliveryAreas().stream().map(this::mapToDeliveryAreaResponse).collect(Collectors.toList()) :
                 List.of();
 
+        List<User> riders = userRepository.findByRoleAndBranch_BranchId(UserRole.RIDER, branch.getBranchId());
+        List<Long> assignedRiderIds = riders.stream().map(User::getUserId).collect(Collectors.toList());
+
         return BranchResponse.builder()
                 .branchId(branch.getBranchId())
                 .branchName(branch.getBranchName())
@@ -193,6 +224,7 @@ public class BranchService {
                 .managerName(branch.getManager() != null ? branch.getManager().getFullName() : null)
                 .status(branch.getStatus())
                 .deliveryAreas(areas)
+                .assignedRiderIds(assignedRiderIds)
                 .build();
     }
 
