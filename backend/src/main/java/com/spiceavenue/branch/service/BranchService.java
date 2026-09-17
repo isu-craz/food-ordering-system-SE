@@ -74,7 +74,12 @@ public class BranchService {
                 .status(EntityStatus.ACTIVE)
                 .build();
 
-        return mapToBranchResponse(branchRepository.save(branch));
+        Branch savedBranch = branchRepository.save(branch);
+        if (manager != null) {
+            manager.setBranch(savedBranch);
+            userRepository.save(manager);
+        }
+        return mapToBranchResponse(savedBranch);
     }
 
     @Transactional
@@ -93,6 +98,8 @@ public class BranchService {
             User manager = userRepository.findById(request.getManagerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Manager user not found"));
             branch.setManager(manager);
+            manager.setBranch(branch);
+            userRepository.save(manager);
         }
 
         return mapToBranchResponse(branchRepository.save(branch));

@@ -196,6 +196,28 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
 
             branchRepository.saveAll(List.of(b1, b2));
+
+            // Link branch_id FK on seeded managers and riders
+            if (managerColombo != null) {
+                managerColombo.setBranch(b1);
+                userRepository.save(managerColombo);
+            }
+            if (managerNegombo != null) {
+                managerNegombo.setBranch(b2);
+                userRepository.save(managerNegombo);
+            }
+
+            User riderKamal = userRepository.findByEmail("rider.kamal@spiceavenue.com").orElse(null);
+            User riderNimal = userRepository.findByEmail("rider.nimal@spiceavenue.com").orElse(null);
+            if (riderKamal != null) {
+                riderKamal.setBranch(b1);
+                userRepository.save(riderKamal);
+            }
+            if (riderNimal != null) {
+                riderNimal.setBranch(b1);
+                userRepository.save(riderNimal);
+            }
+
             log.info("Successfully seeded default branches and delivery areas into MySQL.");
         }
 
