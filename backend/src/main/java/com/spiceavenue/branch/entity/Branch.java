@@ -57,6 +57,12 @@ public class Branch {
     @Builder.Default
     private List<DeliveryArea> deliveryAreas = new ArrayList<>();
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "branch_assigned_riders", joinColumns = @JoinColumn(name = "branch_id"))
+    @Column(name = "rider_id")
+    @Builder.Default
+    private List<Long> assignedRiderIds = new ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
