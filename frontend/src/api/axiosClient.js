@@ -64,7 +64,7 @@ axiosClient.interceptors.response.use(
       }
 
       // 3. Branches
-      if (url.includes('/branches') && method === 'GET') {
+      if (url.includes('/branches')) {
         if (url.includes('/performance')) {
           return {
             success: true,
@@ -73,6 +73,16 @@ axiosClient.interceptors.response.use(
         }
         if (url.includes('/delivery-areas')) {
           return { success: true, data: mockBranches[0].deliveryAreas };
+        }
+        if (method === 'put' || method === 'patch' || method === 'PUT' || method === 'PATCH') {
+          const body = JSON.parse(error.config?.data || '{}');
+          const branchIdMatch = url.match(/\/branches\/(\d+)/);
+          const targetId = branchIdMatch ? Number(branchIdMatch[1]) : (body.branchId || 1);
+          const idx = mockBranches.findIndex(b => b.branchId === targetId);
+          if (idx !== -1) {
+            mockBranches[idx] = { ...mockBranches[idx], ...body };
+            return { success: true, message: 'Branch updated successfully', data: mockBranches[idx] };
+          }
         }
         return { success: true, data: mockBranches };
       }

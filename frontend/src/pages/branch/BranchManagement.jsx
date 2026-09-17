@@ -186,20 +186,21 @@ export default function BranchManagement() {
 
       const res = await axiosClient.put(`/branches/${editBranchData.branchId}`, payload);
       const assignedManager = branchManagers.find(m => String(m.userId) === String(editBranchData.managerId));
-      const updatedLocal = {
+      
+      const backendBranch = (res && res.data) ? res.data : null;
+      const mergedBranch = {
         ...selectedBranch,
         ...editBranchData,
-        managerName: assignedManager ? assignedManager.fullName : (editBranchData.managerId ? 'Assigned' : 'Unassigned'),
-        managerEmail: assignedManager ? assignedManager.email : '',
+        ...(backendBranch || {}),
+        managerName: assignedManager ? assignedManager.fullName : (backendBranch?.managerName || (editBranchData.managerId ? 'Assigned' : 'Unassigned')),
+        managerEmail: assignedManager ? assignedManager.email : (backendBranch?.managerEmail || ''),
         managerId: editBranchData.managerId ? Number(editBranchData.managerId) : null,
       };
 
-      setBranches(prev => prev.map(b => b.branchId === editBranchData.branchId ? (res.data || updatedLocal) : b));
-      if (selectedBranch?.branchId === editBranchData.branchId) {
-        setSelectedBranch(res.data || updatedLocal);
-      }
+      setBranches(prev => prev.map(b => b.branchId === editBranchData.branchId ? mergedBranch : b));
+      setSelectedBranch(mergedBranch);
       setShowEditModal(false);
-      alert('Branch details and manager assignment updated successfully!');
+      alert('Branch details updated successfully!');
       fetchBranches();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to update branch details.');
