@@ -221,7 +221,7 @@ CREATE TABLE `complaints` (
     `category` VARCHAR(100) NOT NULL,
     `description` TEXT NOT NULL,
     `image_url` VARCHAR(500) NULL,
-    `status` ENUM('PENDING', 'IN_PROGRESS', 'RESOLVED') NOT NULL DEFAULT 'PENDING',
+    `status` ENUM('PENDING', 'IN_PROGRESS', 'RESOLVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
     `resolution_notes` TEXT NULL,
     `resolved_by` BIGINT NULL,
     `resolved_at` TIMESTAMP NULL,
