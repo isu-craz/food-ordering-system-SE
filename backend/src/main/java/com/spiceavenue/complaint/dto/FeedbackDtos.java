@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class FeedbackDtos {
@@ -44,10 +45,22 @@ public class FeedbackDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class RejectComplaintRequest {
+        @NotBlank(message = "Rejection reason is required")
+        private String rejectionReason;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class ComplaintResponse {
         private Long complaintId;
         private Long orderId;
         private String orderNumber;
+        private Long branchId;
+        private String branchName;
+        private BigDecimal orderTotal;
         private Long customerId;
         private String customerName;
         private String customerPhone;
@@ -98,6 +111,8 @@ public class FeedbackDtos {
         private Long reviewId;
         private Long orderId;
         private String orderNumber;
+        private Long branchId;
+        private String branchName;
         private Long customerId;
         private String customerName;
         private int rating;
@@ -118,7 +133,10 @@ public class FeedbackDtos {
         private long twoStarCount;
         private long oneStarCount;
         private long totalComplaints;
-        private long resolvedComplaints;
         private long pendingComplaints;
+        private long inProgressComplaints;
+        private long resolvedComplaints;
+        private long rejectedComplaints;
+        private double resolutionRate;
     }
 }

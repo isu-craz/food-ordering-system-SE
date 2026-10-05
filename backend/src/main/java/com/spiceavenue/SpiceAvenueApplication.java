@@ -6,6 +6,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -22,18 +23,20 @@ public class SpiceAvenueApplication {
     }
 
     @Bean
-    CommandLineRunner syncSeedPasswords(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    CommandLineRunner syncSeedPasswords(UserRepository userRepository, PasswordEncoder passwordEncoder, JdbcTemplate jdbcTemplate) {
         return args -> {
+            try {
+                jdbcTemplate.execute("ALTER TABLE complaints MODIFY COLUMN status ENUM('PENDING', 'IN_PROGRESS', 'RESOLVED', 'REJECTED') NOT NULL DEFAULT 'PENDING'");
+            } catch (Exception ignored) {
+            }
+
             String defaultHash = passwordEncoder.encode("Password123!");
             List<User> users = userRepository.findAll();
             for (User user : users) {
-                // If password does not match Password123! and is not self-registered
-                if (!passwordEncoder.matches("Password123!", user.getPassword())) {
-                    user.setPassword(defaultHash);
-                    userRepository.save(user);
-                }
+                user.setPassword(defaultHash);
+                userRepository.save(user);
             }
-            System.out.println("🔑 Synced default credentials (Password123!) for all test user accounts.");
+            System.out.println("🔑 Successfully synchronized 'Password123!' for all " + users.size() + " user accounts.");
         };
     }
 }
