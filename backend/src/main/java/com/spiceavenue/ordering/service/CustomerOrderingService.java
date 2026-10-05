@@ -171,13 +171,13 @@ public class CustomerOrderingService {
 
         return mapToOrderResponse(orderRepository.save(order));
     }
-
+    @Transactional(readOnly = true)
     public List<OrderResponse> getCustomerOrderHistory(Long customerId) {
         return orderRepository.findByCustomer_UserIdOrderByCreatedAtDesc(customerId).stream()
                 .map(this::mapToOrderResponse)
                 .collect(Collectors.toList());
     }
-
+    @Transactional(readOnly = true)
     public OrderResponse trackOrder(Long orderId, Long customerId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
@@ -258,5 +258,40 @@ public class CustomerOrderingService {
                 .deliveryFee(address.getDeliveryArea().getDeliveryFee())
                 .isDefault(address.isDefault())
                 .build();
+    }
+    @Transactional
+    public OrderResponse updateOrderAddress(Long orderId, Long customerId, Long newAddressId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        if (!order.getCustomer().getUserId().equals(customerId)) {
+            throw new BadRequestException("You can only update your own orders");
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new BadRequestException("Cannot update address: Order status is " + order.getStatus());
+        }
+
+        if (order.getCreatedAt() != null) {
+            LocalDateTime now = LocalDateTime.now();
+            long minutes = java.time.Duration.between(order.getCreatedAt(), now).toMinutes();
+
+            if (minutes > 15) {
+                throw new BadRequestException("Cannot update address after 15 minutes of placing order.");
+            }
+        }
+
+        CustomerAddress newAddress = addressRepository.findById(newAddressId)
+                .orElseThrow(() -> new ResourceNotFoundException("New delivery address not found"));
+
+        if (!newAddress.getDeliveryArea().getBranch().getBranchId().equals(order.getBranch().getBranchId())) {
+            throw new BadRequestException("New address area is outside this branch's coverage");
+        }
+
+        order.setDeliveryAddress(newAddress);
+        order.setDeliveryFee(newAddress.getDeliveryArea().getDeliveryFee());
+        order.setTotalAmount(order.getSubtotal().add(order.getDeliveryFee()));
+
+        return mapToOrderResponse(orderRepository.save(order));
     }
 }
