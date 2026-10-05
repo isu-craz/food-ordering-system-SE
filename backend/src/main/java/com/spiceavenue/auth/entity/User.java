@@ -1,5 +1,6 @@
 package com.spiceavenue.auth.entity;
 
+import com.spiceavenue.branch.entity.Branch;
 import com.spiceavenue.common.enums.EntityStatus;
 import com.spiceavenue.common.enums.RiderStatus;
 import com.spiceavenue.common.enums.UserRole;
@@ -23,6 +24,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
     private Long userId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
 
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;

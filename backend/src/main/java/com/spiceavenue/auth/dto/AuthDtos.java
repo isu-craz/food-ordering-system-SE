@@ -61,6 +61,8 @@ public class AuthDtos {
         private String email;
         private UserRole role;
         private RiderStatus riderStatus;
+        private Long branchId;
+        private String branchName;
     }
 
     @Data
@@ -74,5 +76,7 @@ public class AuthDtos {
         private String phoneNumber;
         private UserRole role;
         private RiderStatus riderStatus;
+        private Long branchId;
+        private String branchName;
     }
 }

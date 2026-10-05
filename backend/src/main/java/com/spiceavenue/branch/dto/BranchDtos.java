@@ -40,6 +40,7 @@ public class BranchDtos {
         private LocalTime closingTime;
 
         private Long managerId;
+        private List<Long> assignedRiderIds;
     }
 
     @Data
@@ -47,6 +48,7 @@ public class BranchDtos {
     @AllArgsConstructor
     @Builder
     public static class UpdateBranchRequest {
+        private String branchName;
         private String streetAddress;
         private String contactNumber;
         private String email;
@@ -54,6 +56,7 @@ public class BranchDtos {
         private LocalTime closingTime;
         private EntityStatus status;
         private Long managerId;
+        private List<Long> assignedRiderIds;
     }
 
     @Data
@@ -70,8 +73,10 @@ public class BranchDtos {
         private LocalTime closingTime;
         private Long managerId;
         private String managerName;
+        private String managerEmail;
         private EntityStatus status;
         private List<DeliveryAreaResponse> deliveryAreas;
+        private List<Long> assignedRiderIds;
     }
 
     @Data

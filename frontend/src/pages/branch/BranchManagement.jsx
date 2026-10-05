@@ -168,27 +168,47 @@ export default function BranchManagement() {
   const handleUpdateBranch = async (e) => {
     e.preventDefault();
     try {
+      const formatTime = (t) => {
+        if (!t) return '08:00:00';
+        return t.length === 5 ? `${t}:00` : t;
+      };
+
       const assignedManager = branchManagers.find(m => String(m.userId) === String(editBranchData.managerId));
-      const updatedPayload = {
+
+      const payload = {
+        branchName: editBranchData.branchName,
+        streetAddress: editBranchData.streetAddress,
+        contactNumber: editBranchData.contactNumber,
+        email: editBranchData.email,
+        openingTime: formatTime(editBranchData.openingTime),
+        closingTime: formatTime(editBranchData.closingTime),
+        status: editBranchData.status,
+        managerId: editBranchData.managerId ? Number(editBranchData.managerId) : null,
+        managerName: assignedManager ? assignedManager.fullName : 'Unassigned',
+        managerEmail: assignedManager ? assignedManager.email : '',
+        assignedRiderIds: editBranchData.assignedRiderIds || [],
+      };
+
+      const res = await axiosClient.put(`/branches/${editBranchData.branchId}`, payload);
+      
+      const backendBranch = (res && res.data) ? res.data : null;
+      const mergedBranch = {
         ...selectedBranch,
         ...editBranchData,
-        managerName: assignedManager ? assignedManager.fullName : (editBranchData.managerId ? 'Assigned' : 'Unassigned'),
-        managerEmail: assignedManager ? assignedManager.email : '',
+        ...(backendBranch || {}),
+        assignedRiderIds: editBranchData.assignedRiderIds || (backendBranch?.assignedRiderIds || []),
+        managerName: assignedManager ? assignedManager.fullName : (backendBranch?.managerName || (editBranchData.managerId ? 'Assigned' : 'Unassigned')),
+        managerEmail: assignedManager ? assignedManager.email : (backendBranch?.managerEmail || ''),
         managerId: editBranchData.managerId ? Number(editBranchData.managerId) : null,
       };
 
-      try {
-        await axiosClient.put(`/branches/${editBranchData.branchId}`, updatedPayload);
-      } catch (err) {
-        console.warn('Backend update endpoint unavailable, updating local state');
-      }
-
-      setBranches(prev => prev.map(b => b.branchId === editBranchData.branchId ? updatedPayload : b));
-      setSelectedBranch(updatedPayload);
+      setBranches(prev => prev.map(b => b.branchId === editBranchData.branchId ? mergedBranch : b));
+      setSelectedBranch(mergedBranch);
       setShowEditModal(false);
-      alert('Branch details and manager assignment updated successfully!');
+      alert('Branch details updated successfully!');
+      fetchBranches();
     } catch (err) {
-      alert('Failed to update branch details.');
+      alert(err.response?.data?.message || 'Failed to update branch details.');
     }
   };
 

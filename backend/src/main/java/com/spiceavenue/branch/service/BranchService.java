@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,9 +74,24 @@ public class BranchService {
                 .closingTime(request.getClosingTime())
                 .manager(manager)
                 .status(EntityStatus.ACTIVE)
+                .assignedRiderIds(request.getAssignedRiderIds() != null ? new ArrayList<>(request.getAssignedRiderIds()) : new ArrayList<>())
                 .build();
 
-        return mapToBranchResponse(branchRepository.save(branch));
+        Branch savedBranch = branchRepository.save(branch);
+        if (manager != null) {
+            manager.setBranch(savedBranch);
+            userRepository.save(manager);
+        }
+        if (request.getAssignedRiderIds() != null && !request.getAssignedRiderIds().isEmpty()) {
+            List<User> riders = userRepository.findAllById(request.getAssignedRiderIds());
+            for (User r : riders) {
+                if (r.getRole() == UserRole.RIDER) {
+                    r.setBranch(savedBranch);
+                    userRepository.save(r);
+                }
+            }
+        }
+        return mapToBranchResponse(savedBranch);
     }
 
     @Transactional
@@ -82,17 +99,82 @@ public class BranchService {
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found with ID: " + branchId));
 
-        if (request.getStreetAddress() != null) branch.setStreetAddress(request.getStreetAddress());
-        if (request.getContactNumber() != null) branch.setContactNumber(request.getContactNumber());
-        if (request.getEmail() != null) branch.setEmail(request.getEmail());
-        if (request.getOpeningTime() != null) branch.setOpeningTime(request.getOpeningTime());
-        if (request.getClosingTime() != null) branch.setClosingTime(request.getClosingTime());
-        if (request.getStatus() != null) branch.setStatus(request.getStatus());
+        if (request.getBranchName() != null && !request.getBranchName().isBlank()) {
+            branch.setBranchName(request.getBranchName());
+        }
+        if (request.getStreetAddress() != null && !request.getStreetAddress().isBlank()) {
+            branch.setStreetAddress(request.getStreetAddress());
+        }
+        if (request.getContactNumber() != null && !request.getContactNumber().isBlank()) {
+            branch.setContactNumber(request.getContactNumber());
+        }
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            branch.setEmail(request.getEmail());
+        }
+        if (request.getOpeningTime() != null) {
+            branch.setOpeningTime(request.getOpeningTime());
+        }
+        if (request.getClosingTime() != null) {
+            branch.setClosingTime(request.getClosingTime());
+        }
+        if (request.getStatus() != null) {
+            branch.setStatus(request.getStatus());
+        }
 
         if (request.getManagerId() != null) {
-            User manager = userRepository.findById(request.getManagerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Manager user not found"));
-            branch.setManager(manager);
+            if (request.getManagerId() > 0) {
+                User manager = userRepository.findById(request.getManagerId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Manager user not found"));
+                if (manager.getRole() != UserRole.BRANCH_MANAGER) {
+                    throw new BadRequestException("Selected user is not a BRANCH_MANAGER");
+                }
+
+                // If this manager is currently managing another branch, clear it from that branch
+                Optional<Branch> prevManagedBranchOpt = branchRepository.findByManager_UserId(manager.getUserId());
+                if (prevManagedBranchOpt.isPresent() && !prevManagedBranchOpt.get().getBranchId().equals(branchId)) {
+                    Branch prevManagedBranch = prevManagedBranchOpt.get();
+                    prevManagedBranch.setManager(null);
+                    branchRepository.save(prevManagedBranch);
+                }
+
+                if (branch.getManager() != null && !branch.getManager().getUserId().equals(manager.getUserId())) {
+                    User oldManager = branch.getManager();
+                    oldManager.setBranch(null);
+                    userRepository.save(oldManager);
+                }
+                branch.setManager(manager);
+                manager.setBranch(branch);
+                userRepository.save(manager);
+            } else {
+                if (branch.getManager() != null) {
+                    User oldManager = branch.getManager();
+                    oldManager.setBranch(null);
+                    userRepository.save(oldManager);
+                }
+                branch.setManager(null);
+            }
+        }
+
+        if (request.getAssignedRiderIds() != null) {
+            branch.getAssignedRiderIds().clear();
+            branch.getAssignedRiderIds().addAll(request.getAssignedRiderIds());
+
+            List<User> currentRiders = userRepository.findByRoleAndBranch_BranchId(UserRole.RIDER, branch.getBranchId());
+            for (User r : currentRiders) {
+                if (!request.getAssignedRiderIds().contains(r.getUserId())) {
+                    r.setBranch(null);
+                    userRepository.save(r);
+                }
+            }
+            if (!request.getAssignedRiderIds().isEmpty()) {
+                List<User> newRiders = userRepository.findAllById(request.getAssignedRiderIds());
+                for (User r : newRiders) {
+                    if (r.getRole() == UserRole.RIDER) {
+                        r.setBranch(branch);
+                        userRepository.save(r);
+                    }
+                }
+            }
         }
 
         return mapToBranchResponse(branchRepository.save(branch));
@@ -151,6 +233,11 @@ public class BranchService {
                 branch.getDeliveryAreas().stream().map(this::mapToDeliveryAreaResponse).collect(Collectors.toList()) :
                 List.of();
 
+        List<Long> assignedRiderIds = (branch.getAssignedRiderIds() != null && !branch.getAssignedRiderIds().isEmpty())
+                ? new ArrayList<>(branch.getAssignedRiderIds())
+                : userRepository.findByRoleAndBranch_BranchId(UserRole.RIDER, branch.getBranchId())
+                        .stream().map(User::getUserId).collect(Collectors.toList());
+
         return BranchResponse.builder()
                 .branchId(branch.getBranchId())
                 .branchName(branch.getBranchName())
@@ -160,9 +247,11 @@ public class BranchService {
                 .openingTime(branch.getOpeningTime())
                 .closingTime(branch.getClosingTime())
                 .managerId(branch.getManager() != null ? branch.getManager().getUserId() : null)
-                .managerName(branch.getManager() != null ? branch.getManager().getFullName() : null)
+                .managerName(branch.getManager() != null ? branch.getManager().getFullName() : "Unassigned")
+                .managerEmail(branch.getManager() != null ? branch.getManager().getEmail() : "")
                 .status(branch.getStatus())
                 .deliveryAreas(areas)
+                .assignedRiderIds(assignedRiderIds)
                 .build();
     }
 

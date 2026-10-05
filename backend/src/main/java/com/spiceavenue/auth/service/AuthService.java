@@ -60,6 +60,8 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .riderStatus(user.getRiderStatus())
+                .branchId(user.getBranch() != null ? user.getBranch().getBranchId() : null)
+                .branchName(user.getBranch() != null ? user.getBranch().getBranchName() : null)
                 .build();
     }
 
@@ -82,6 +84,8 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .riderStatus(user.getRiderStatus())
+                .branchId(user.getBranch() != null ? user.getBranch().getBranchId() : null)
+                .branchName(user.getBranch() != null ? user.getBranch().getBranchName() : null)
                 .build();
     }
 
@@ -101,6 +105,8 @@ public class AuthService {
                 .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole())
                 .riderStatus(user.getRiderStatus())
+                .branchId(user.getBranch() != null ? user.getBranch().getBranchId() : null)
+                .branchName(user.getBranch() != null ? user.getBranch().getBranchName() : null)
                 .build();
     }
 }
