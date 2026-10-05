@@ -20,6 +20,7 @@ import {
   DollarSign,
   Search,
   Filter,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -64,6 +65,11 @@ export default function RiderPortal() {
       task.branchName?.toLowerCase().includes(q);
     return matchesStatus && matchesSearch;
   });
+
+  // Cancel Delivery Modal States
+  const [cancelModalDelivery, setCancelModalDelivery] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState('Vehicle Issue / Breakdown');
+  const [isCancelling, setIsCancelling] = useState(false);
 
 
   // =========================================================
@@ -213,23 +219,19 @@ export default function RiderPortal() {
   // DELETE / CANCEL DELIVERY
   // =========================================================
 
-  const handleDeleteDelivery = async (deliveryId) => {
-    const confirmed = window.confirm(
-      'Are you sure you want to cancel this delivery?'
-    );
-
-    if (!confirmed) {
-      return;
-    }
+  const handleConfirmCancelDelivery = async () => {
+    if (!cancelModalDelivery) return;
 
     try {
+      setIsCancelling(true);
+
       await axiosClient.delete(
-        `/delivery/tasks/${deliveryId}`
+        `/delivery/tasks/${cancelModalDelivery.deliveryId}`
       );
 
-      alert(
-        'Delivery cancelled successfully.'
-      );
+      setCancelModalDelivery(null);
+
+      alert('Delivery assignment cancelled successfully.');
 
       await fetchRiderData();
 
@@ -238,6 +240,8 @@ export default function RiderPortal() {
         err.response?.data?.message ||
           'Error cancelling delivery'
       );
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -782,9 +786,7 @@ export default function RiderPortal() {
 
                               <button
                                 onClick={() =>
-                                  handleDeleteDelivery(
-                                    task.deliveryId
-                                  )
+                                  setCancelModalDelivery(task)
                                 }
                                 className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm"
                               >
@@ -1123,6 +1125,91 @@ export default function RiderPortal() {
 
         </div>
 
+      )}
+
+
+      {/* =====================================================
+          CANCEL DELIVERY CONFIRMATION MODAL
+      ====================================================== */}
+
+      {cancelModalDelivery && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-stone-200 max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-2.5 text-rose-600">
+                <div className="p-2 rounded-xl bg-rose-50">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-black text-stone-900">
+                  Cancel Assignment?
+                </h3>
+              </div>
+              <button
+                onClick={() => setCancelModalDelivery(null)}
+                className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-stone-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-500 mb-4">
+              You are about to cancel your assignment for order{' '}
+              <span className="font-bold text-stone-800">
+                {cancelModalDelivery.orderNumber}
+              </span>{' '}
+              ({cancelModalDelivery.branchName}). The order will be returned to the dispatch queue.
+            </p>
+
+            <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-3 mb-4 text-[11px] text-rose-700">
+              Only deliveries that have not yet been picked up can be cancelled.
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-xs font-bold text-stone-700 mb-1.5">
+                Reason for Cancellation
+              </label>
+              <select
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+              >
+                <option value="Vehicle Issue / Breakdown">Vehicle Issue / Breakdown</option>
+                <option value="Heavy Traffic / Road Block">Heavy Traffic / Road Block</option>
+                <option value="Health / Personal Emergency">Health / Personal Emergency</option>
+                <option value="Excessive Delivery Distance">Excessive Delivery Distance</option>
+                <option value="Other">Other / Personal Reason</option>
+              </select>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCancelModalDelivery(null)}
+                disabled={isCancelling}
+                className="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-700 font-bold text-xs hover:bg-stone-50"
+              >
+                Keep Assignment
+              </button>
+
+              <button
+                onClick={handleConfirmCancelDelivery}
+                disabled={isCancelling}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                {isCancelling ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Confirm Cancel
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
