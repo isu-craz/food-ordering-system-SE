@@ -36,8 +36,8 @@ public class CustomerAddress {
     @Column(nullable = false)
     private String street;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "area_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "area_id")
     private DeliveryArea deliveryArea;
 
     @Column(name = "is_default", nullable = false)
