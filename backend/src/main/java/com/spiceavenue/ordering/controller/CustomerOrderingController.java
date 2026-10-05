@@ -79,4 +79,14 @@ public class CustomerOrderingController {
         OrderResponse order = orderingService.cancelOrder(id, user.getId(), request != null ? request : new CancelOrderRequest());
         return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", order));
     }
+    @PatchMapping("/orders/{id}/address")
+    @Operation(summary = "Update delivery address for customer order (Allowed within 15 minutes of placement)")
+    public ResponseEntity<ApiResponse<OrderResponse>> updateAddress(
+            @AuthenticationPrincipal UserDetailsImpl user,
+            @PathVariable Long id,
+            @RequestParam Long newAddressId) {
+        OrderResponse order = orderingService.updateOrderAddress(id, user.getId(), newAddressId);
+        return ResponseEntity.ok(ApiResponse.success("Delivery address updated successfully", order));
+    }
+
 }
