@@ -31,129 +31,274 @@ public class OrderFulfillmentService {
     private final DeliveryRepository deliveryRepository;
     private final CustomerOrderingService customerOrderingService;
 
-    public List<OrderResponse> getIncomingOrders(Long branchId, OrderStatus status) {
+
+    // =========================================================
+    // GET INCOMING ORDERS
+    // =========================================================
+
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getIncomingOrders(
+            Long branchId,
+            OrderStatus status) {
+
         List<Order> orders = status != null
-                ? orderRepository.findByBranch_BranchIdAndStatusOrderByCreatedAtAsc(branchId, status)
-                : orderRepository.findByBranch_BranchIdOrderByCreatedAtDesc(branchId);
-        return orders.stream().map(customerOrderingService::mapToOrderResponse).collect(Collectors.toList());
+                ? orderRepository.findByBranch_BranchIdAndStatusOrderByCreatedAtAsc(
+                branchId,
+                status)
+                : orderRepository.findByBranch_BranchIdOrderByCreatedAtDesc(
+                branchId);
+
+        return orders.stream()
+                .map(customerOrderingService::mapToOrderResponse)
+                .collect(Collectors.toList());
     }
 
+
+    // =========================================================
+    // CONFIRM ORDER
+    // =========================================================
+
     @Transactional
-    public OrderResponse confirmOrder(Long orderId, ConfirmOrderRequest request) {
+    public OrderResponse confirmOrder(
+            Long orderId,
+            ConfirmOrderRequest request) {
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Order not found with ID: " + orderId));
 
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new BadRequestException("Only PENDING orders can be confirmed. Current status: " + order.getStatus());
+            throw new BadRequestException(
+                    "Only PENDING orders can be confirmed. Current status: "
+                            + order.getStatus());
         }
 
         order.setStatus(OrderStatus.CONFIRMED);
-        order.setEstimatedPrepMinutes(request.getEstimatedPrepMinutes());
-        return customerOrderingService.mapToOrderResponse(orderRepository.save(order));
+
+        order.setEstimatedPrepMinutes(
+                request.getEstimatedPrepMinutes());
+
+        Order savedOrder = orderRepository.save(order);
+
+        return customerOrderingService.mapToOrderResponse(savedOrder);
     }
 
+
+    // =========================================================
+    // REJECT ORDER
+    // =========================================================
+
     @Transactional
-    public OrderResponse rejectOrder(Long orderId, RejectOrderRequest request) {
+    public OrderResponse rejectOrder(
+            Long orderId,
+            RejectOrderRequest request) {
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Order not found"));
 
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new BadRequestException("Only PENDING orders can be rejected");
+            throw new BadRequestException(
+                    "Only PENDING orders can be rejected");
         }
 
         order.setStatus(OrderStatus.REJECTED);
-        order.setRejectionReason(request.getReason());
-        return customerOrderingService.mapToOrderResponse(orderRepository.save(order));
+
+        order.setRejectionReason(
+                request.getReason());
+
+        Order savedOrder = orderRepository.save(order);
+
+        return customerOrderingService.mapToOrderResponse(savedOrder);
     }
+
+
+    // =========================================================
+    // MARK AS PREPARING
+    // =========================================================
 
     @Transactional
     public OrderResponse markAsPreparing(Long orderId) {
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Order not found"));
 
         if (order.getStatus() != OrderStatus.CONFIRMED) {
-            throw new BadRequestException("Order must be CONFIRMED before starting preparation");
+            throw new BadRequestException(
+                    "Order must be CONFIRMED before starting preparation");
         }
 
         order.setStatus(OrderStatus.PREPARING);
-        return customerOrderingService.mapToOrderResponse(orderRepository.save(order));
+
+        Order savedOrder = orderRepository.save(order);
+
+        return customerOrderingService.mapToOrderResponse(savedOrder);
     }
+
+
+    // =========================================================
+    // MARK READY FOR PICKUP
+    // =========================================================
 
     @Transactional
     public OrderResponse markReadyForPickup(Long orderId) {
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Order not found"));
 
         if (order.getOrderType() != OrderType.PICKUP) {
-            throw new BadRequestException("This action is only valid for PICKUP orders");
+            throw new BadRequestException(
+                    "This action is only valid for PICKUP orders");
         }
+
         if (order.getStatus() != OrderStatus.PREPARING) {
-            throw new BadRequestException("Order must be in PREPARING status");
+            throw new BadRequestException(
+                    "Order must be in PREPARING status");
         }
 
         order.setStatus(OrderStatus.READY_FOR_PICKUP);
-        return customerOrderingService.mapToOrderResponse(orderRepository.save(order));
+
+        Order savedOrder = orderRepository.save(order);
+
+        return customerOrderingService.mapToOrderResponse(savedOrder);
     }
+
+
+    // =========================================================
+    // MARK PICKED UP
+    // =========================================================
 
     @Transactional
     public OrderResponse markPickedUp(Long orderId) {
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Order not found"));
 
         if (order.getStatus() != OrderStatus.READY_FOR_PICKUP) {
-            throw new BadRequestException("Order must be READY_FOR_PICKUP before marking as PICKED_UP");
+            throw new BadRequestException(
+                    "Order must be READY_FOR_PICKUP before marking as PICKED_UP");
         }
 
         order.setStatus(OrderStatus.PICKED_UP);
-        return customerOrderingService.mapToOrderResponse(orderRepository.save(order));
+
+        Order savedOrder = orderRepository.save(order);
+
+        return customerOrderingService.mapToOrderResponse(savedOrder);
     }
+
+
+    // =========================================================
+    // MARK READY FOR DELIVERY
+    // =========================================================
 
     @Transactional
     public OrderResponse markReadyForDelivery(Long orderId) {
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Order not found"));
 
         if (order.getOrderType() != OrderType.DELIVERY) {
-            throw new BadRequestException("This action is only valid for DELIVERY orders");
+            throw new BadRequestException(
+                    "This action is only valid for DELIVERY orders");
         }
+
         if (order.getStatus() != OrderStatus.PREPARING) {
-            throw new BadRequestException("Order must be in PREPARING status");
+            throw new BadRequestException(
+                    "Order must be in PREPARING status");
         }
 
         order.setStatus(OrderStatus.READY_FOR_DELIVERY);
-        return customerOrderingService.mapToOrderResponse(orderRepository.save(order));
+
+        Order savedOrder = orderRepository.save(order);
+
+        return customerOrderingService.mapToOrderResponse(savedOrder);
     }
 
+
+    // =========================================================
+    // ASSIGN DELIVERY RIDER
+    // =========================================================
+
     @Transactional
-    public OrderResponse assignDeliveryRider(Long orderId, AssignRiderRequest request) {
+    public OrderResponse assignDeliveryRider(
+            Long orderId,
+            AssignRiderRequest request) {
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Order not found"));
 
+        // Check order type
         if (order.getOrderType() != OrderType.DELIVERY) {
-            throw new BadRequestException("Only delivery orders can have riders assigned");
+            throw new BadRequestException(
+                    "Only delivery orders can have riders assigned");
         }
 
-        User rider = userRepository.findById(request.getRiderId())
-                .orElseThrow(() -> new ResourceNotFoundException("Rider not found"));
+        // Check rider exists
+        User rider = userRepository.findById(
+                        request.getRiderId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Rider not found"));
 
+        // Check rider role
         if (rider.getRole() != UserRole.RIDER) {
-            throw new BadRequestException("Selected user is not a registered delivery rider");
+            throw new BadRequestException(
+                    "Selected user is not a registered delivery rider");
         }
 
+        // Check rider availability
         if (rider.getRiderStatus() != RiderStatus.AVAILABLE) {
-            throw new BadRequestException("Rider is currently " + rider.getRiderStatus() + " and cannot receive new assignments");
+            throw new BadRequestException(
+                    "Rider is currently "
+                            + rider.getRiderStatus()
+                            + " and cannot receive new assignments");
         }
 
-        Delivery delivery = deliveryRepository.findByOrder_OrderId(orderId)
-                .orElse(Delivery.builder().order(order).build());
+        // Find existing delivery or create new one
+        Delivery delivery =
+                deliveryRepository.findByOrder_OrderId(orderId)
+                        .orElse(
+                                Delivery.builder()
+                                        .order(order)
+                                        .build()
+                        );
 
+        // Assign rider
         delivery.setRider(rider);
-        delivery.setStatus(Delivery.DeliveryStatus.ASSIGNED);
+
+        // Initial delivery status
+        delivery.setStatus(
+                Delivery.DeliveryStatus.ASSIGNED);
+
         deliveryRepository.save(delivery);
 
-        // Update rider status to BUSY
-        rider.setRiderStatus(RiderStatus.BUSY);
-        userRepository.save(rider);
+
+        /*
+         * IMPORTANT:
+         *
+         * Do NOT change rider to BUSY here.
+         *
+         * According to the delivery workflow,
+         * rider becomes BUSY when the rider ACCEPTS
+         * the delivery.
+         *
+         * DeliveryService.acceptDelivery()
+         * handles:
+         *
+         * AVAILABLE -> BUSY
+         */
 
         return customerOrderingService.mapToOrderResponse(order);
     }
