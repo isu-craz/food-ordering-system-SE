@@ -68,9 +68,7 @@ export default function Home() {
       {/* Hero */}
       <div className="bg-gradient-to-r from-orange-600 to-orange-700 rounded-3xl p-8 sm:p-12 text-white shadow-xl shadow-orange-700/10 mb-12">
         <div className="max-w-3xl">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-sm mb-4">
-            🎓 SE2030 Software Engineering Project
-          </span>
+
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight mb-4">
             Spice Avenue Restaurant Network
           </h1>
