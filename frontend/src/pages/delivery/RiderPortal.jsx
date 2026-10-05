@@ -18,6 +18,8 @@ import {
   Award,
   Calendar,
   DollarSign,
+  Search,
+  Filter,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -45,6 +47,23 @@ export default function RiderPortal() {
   }).length;
 
   const estimatedEarnings = history.length * 350;
+
+  // Task Search and Status Filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const filteredTasks = tasks.filter((task) => {
+    const matchesStatus =
+      statusFilter === 'ALL' || task.deliveryStatus === statusFilter;
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      task.orderNumber?.toLowerCase().includes(q) ||
+      task.customerName?.toLowerCase().includes(q) ||
+      task.deliveryAddress?.toLowerCase().includes(q) ||
+      task.branchName?.toLowerCase().includes(q);
+    return matchesStatus && matchesSearch;
+  });
 
 
   // =========================================================
@@ -502,6 +521,51 @@ export default function RiderPortal() {
               </div>
 
 
+              {/* Search & Filter Bar */}
+              {tasks.length > 0 && (
+                <div className="bg-white rounded-2xl border border-stone-200 p-3 mb-5 shadow-sm flex flex-col md:flex-row items-center gap-3">
+                  <div className="relative w-full md:flex-1">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="text"
+                      placeholder="Search by order #, customer, address, or branch..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-stone-50 border border-stone-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                    {[
+                      { key: 'ALL', label: 'All Tasks' },
+                      { key: 'ASSIGNED', label: 'Assigned' },
+                      { key: 'ACCEPTED', label: 'Accepted' },
+                      { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.key}
+                        onClick={() => setStatusFilter(tab.key)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                          statusFilter === tab.key
+                            ? 'bg-orange-600 text-white shadow-sm'
+                            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {tasks.length === 0 ? (
 
                 <div className="bg-white p-12 text-center rounded-3xl border border-stone-200">
@@ -518,11 +582,37 @@ export default function RiderPortal() {
 
                 </div>
 
+              ) : filteredTasks.length === 0 ? (
+
+                <div className="bg-white p-10 text-center rounded-3xl border border-stone-200">
+
+                  <Search className="w-8 h-8 mx-auto mb-2 text-stone-300" />
+
+                  <h3 className="font-bold text-stone-700 text-sm">
+                    No matching deliveries found
+                  </h3>
+
+                  <p className="text-xs text-stone-400 mt-1 mb-3">
+                    No deliveries match your current search query or status filter.
+                  </p>
+
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStatusFilter('ALL');
+                    }}
+                    className="px-4 py-1.5 rounded-xl bg-stone-100 text-stone-700 text-xs font-bold hover:bg-stone-200"
+                  >
+                    Clear Filters
+                  </button>
+
+                </div>
+
               ) : (
 
                 <div className="space-y-4">
 
-                  {tasks.map((task) => (
+                  {filteredTasks.map((task) => (
 
                     <div
                       key={task.deliveryId}
