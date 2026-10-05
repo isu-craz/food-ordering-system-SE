@@ -33,6 +33,16 @@ public class MenuDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class UpdateCategoryRequest {
+        private String categoryName;
+        private String description;
+        private EntityStatus status;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class CategoryResponse {
         private Long categoryId;
         private Long branchId;
@@ -84,6 +94,19 @@ public class MenuDtos {
     @AllArgsConstructor
     @Builder
     public static class CreateVariationRequest {
+        @NotBlank(message = "Variation name is required")
+        private String variationName;
+
+        @NotNull(message = "Additional price is required")
+        @DecimalMin(value = "0.0", message = "Additional price cannot be negative")
+        private BigDecimal additionalPrice;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class UpdateVariationRequest {
         @NotBlank(message = "Variation name is required")
         private String variationName;
 

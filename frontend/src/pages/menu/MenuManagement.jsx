@@ -19,9 +19,14 @@ export default function MenuManagement() {
 
   // Modals
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [showVariationModal, setShowVariationModal] = useState(false);
+  const [showEditVariationModal, setShowEditVariationModal] = useState(false);
   const [selectedItemForVariation, setSelectedItemForVariation] = useState(null);
+  const [editVariationData, setEditVariationData] = useState({ variationId: null, variationName: '', additionalPrice: 0 });
+  const [editCategoryData, setEditCategoryData] = useState({ categoryId: null, categoryName: '', description: '' });
 
   // Form states
   const [newCategory, setNewCategory] = useState({ categoryName: '', description: '' });
@@ -31,6 +36,14 @@ export default function MenuManagement() {
     description: '',
     basePrice: '',
     imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500',
+  });
+  const [editItemData, setEditItemData] = useState({
+    itemId: null,
+    categoryId: '',
+    foodName: '',
+    description: '',
+    basePrice: '',
+    imageUrl: '',
   });
   const [newVariation, setNewVariation] = useState({ variationName: '', additionalPrice: 0 });
 
@@ -148,6 +161,84 @@ export default function MenuManagement() {
     }
   };
 
+  const openEditItemModal = (item) => {
+    setEditItemData({
+      itemId: item.itemId,
+      categoryId: item.categoryId || '',
+      foodName: item.foodName || '',
+      description: item.description || '',
+      basePrice: item.basePrice || '',
+      imageUrl: item.imageUrl || '',
+    });
+    setShowEditItemModal(true);
+  };
+
+  const handleUpdateItem = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        categoryId: Number(editItemData.categoryId),
+        foodName: editItemData.foodName,
+        description: editItemData.description,
+        basePrice: Number(editItemData.basePrice),
+        imageUrl: editItemData.imageUrl,
+      };
+      await axiosClient.put(`/menu-items/${editItemData.itemId}`, payload);
+      setShowEditItemModal(false);
+      setMenuItems((prev) =>
+        prev.map((i) => (i.itemId === editItemData.itemId ? { ...i, ...payload } : i))
+      );
+      alert('Menu Item Updated Successfully!');
+      loadBranchMenu();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error updating menu item');
+    }
+  };
+
+  const handleDeleteMenuItem = async (itemId) => {
+    if (!window.confirm('Are you sure you want to delete this menu item?')) return;
+    try {
+      await axiosClient.delete(`/menu-items/${itemId}`);
+      setMenuItems((prev) => prev.filter((i) => i.itemId !== itemId));
+      alert('Menu item deleted successfully!');
+      loadBranchMenu();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error deleting menu item');
+    }
+  };
+
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
+    if (!editCategoryData.categoryId) return;
+    try {
+      const res = await axiosClient.put(`/categories/${editCategoryData.categoryId}`, {
+        categoryName: editCategoryData.categoryName,
+        description: editCategoryData.description,
+      });
+      if (res.success) {
+        setShowEditCategoryModal(false);
+        alert('Category updated successfully!');
+        loadBranchMenu();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error updating category');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId, categoryName) => {
+    if (!window.confirm(`Delete category "${categoryName}"?`)) return;
+    try {
+      const res = await axiosClient.delete(`/categories/${categoryId}`);
+      if (res.success) {
+        if (selectedCategory === categoryId) setSelectedCategory('ALL');
+        alert('Category deleted successfully!');
+        loadBranchMenu();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error deleting category');
+    }
+  };
+
   const handleAddVariation = async (e) => {
     e.preventDefault();
     if (!selectedItemForVariation) return;
@@ -173,6 +264,25 @@ export default function MenuManagement() {
       }
     } catch (err) {
       alert('Error deleting variation');
+    }
+  };
+
+  const handleUpdateVariation = async (e) => {
+    e.preventDefault();
+    if (!editVariationData.variationId) return;
+    try {
+      const res = await axiosClient.put(`/variations/${editVariationData.variationId}`, {
+        variationName: editVariationData.variationName,
+        additionalPrice: editVariationData.additionalPrice,
+      });
+      if (res.success) {
+        setShowEditVariationModal(false);
+        setEditVariationData({ variationId: null, variationName: '', additionalPrice: 0 });
+        alert('Size variation updated!');
+        loadBranchMenu();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error updating variation');
     }
   };
 
@@ -260,22 +370,44 @@ export default function MenuManagement() {
             const isSelected = selectedCategory === c.categoryId;
             const categoryItemCount = menuItems.filter(m => m.categoryId === c.categoryId).length;
             return (
-              <button
+              <div
                 key={c.categoryId}
-                onClick={() => setSelectedCategory(c.categoryId)}
-                className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20 ring-2 ring-orange-500/30'
                     : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 hover:border-stone-300'
                 }`}
               >
-                <span>{c.categoryName}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isSelected ? 'bg-orange-700 text-white' : 'bg-stone-100 text-stone-500'
-                }`}>
-                  {categoryItemCount}
-                </span>
-              </button>
+                <button onClick={() => setSelectedCategory(c.categoryId)} className="flex items-center gap-1.5">
+                  <span>{c.categoryName}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    isSelected ? 'bg-orange-700 text-white' : 'bg-stone-100 text-stone-500'
+                  }`}>
+                    {categoryItemCount}
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditCategoryData({ categoryId: c.categoryId, categoryName: c.categoryName, description: c.description || '' });
+                    setShowEditCategoryModal(true);
+                  }}
+                  className={`p-0.5 rounded hover:bg-black/10 ${isSelected ? 'text-white' : 'text-stone-400 hover:text-stone-700'}`}
+                  title="Edit Category"
+                >
+                  <Edit3 className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCategory(c.categoryId, c.categoryName);
+                  }}
+                  className={`p-0.5 rounded hover:bg-black/10 ${isSelected ? 'text-white' : 'text-stone-400 hover:text-rose-600'}`}
+                  title="Delete Category"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
             );
           })}
         </div>
@@ -373,6 +505,20 @@ export default function MenuManagement() {
                                 +LKR {Number(v.additionalPrice).toFixed(2)}
                               </span>
                               <button
+                                onClick={() => {
+                                  setEditVariationData({
+                                    variationId: v.variationId,
+                                    variationName: v.variationName,
+                                    additionalPrice: v.additionalPrice,
+                                  });
+                                  setShowEditVariationModal(true);
+                                }}
+                                className="text-stone-400 hover:text-stone-700 p-0.5"
+                                title="Edit variation"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
                                 onClick={() => handleDeleteVariation(v.variationId)}
                                 className="text-rose-400 hover:text-rose-600 p-0.5"
                                 title="Remove variation"
@@ -390,20 +536,35 @@ export default function MenuManagement() {
                 </div>
 
                 {/* Card Bottom Controls */}
-                <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
+                <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
                   <span className="text-[10px] font-medium text-stone-400">
                     ID: #{item.itemId}
                   </span>
-                  <button
-                    onClick={() => handleToggleAvailability(item.itemId, isItemAvailable)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all ${
-                      isItemAvailable
-                        ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
-                        : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                    }`}
-                  >
-                    {isItemAvailable ? 'Mark Out of Stock' : 'Mark In Stock'}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => openEditItemModal(item)}
+                      className="text-xs font-bold px-2.5 py-1.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 flex items-center gap-1 transition-all"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-stone-600" /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMenuItem(item.itemId)}
+                      className="p-1.5 rounded-xl border border-rose-100 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all"
+                      title="Deactivate item"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleToggleAvailability(item.itemId, isItemAvailable)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all ${
+                        isItemAvailable
+                          ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                          : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                      }`}
+                    >
+                      {isItemAvailable ? 'Out of Stock' : 'In Stock'}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -448,6 +609,50 @@ export default function MenuManagement() {
                 </button>
                 <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded-xl font-bold">
                   Create Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Category */}
+      {showEditCategoryModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-sm w-full rounded-3xl p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-stone-900 mb-3">Edit Food Category</h3>
+            <form onSubmit={handleUpdateCategory} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Category Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editCategoryData.categoryName}
+                  onChange={(e) => setEditCategoryData({ ...editCategoryData, categoryName: e.target.value })}
+                  placeholder="e.g. Starters, Main Course, Drinks"
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Description</label>
+                <textarea
+                  rows="2"
+                  value={editCategoryData.description}
+                  onChange={(e) => setEditCategoryData({ ...editCategoryData, description: e.target.value })}
+                  placeholder="Category details..."
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditCategoryModal(false)}
+                  className="px-3 py-1.5 bg-stone-100 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded-xl font-bold">
+                  Save Changes
                 </button>
               </div>
             </form>
@@ -540,6 +745,88 @@ export default function MenuManagement() {
         </div>
       )}
 
+      {/* Modal: Edit Menu Item */}
+      {showEditItemModal && editItemData && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-stone-900 mb-3">Edit Menu Item Details</h3>
+            <form onSubmit={handleUpdateItem} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Food Category</label>
+                <select
+                  required
+                  value={editItemData.categoryId}
+                  onChange={(e) => setEditItemData({ ...editItemData, categoryId: e.target.value })}
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((c) => (
+                    <option key={c.categoryId} value={c.categoryId}>
+                      {c.categoryName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Food Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editItemData.foodName}
+                  onChange={(e) => setEditItemData({ ...editItemData, foodName: e.target.value })}
+                  placeholder="e.g. Double Cheese Beef Smash Burger"
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl font-medium"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Description</label>
+                <textarea
+                  rows="2"
+                  value={editItemData.description}
+                  onChange={(e) => setEditItemData({ ...editItemData, description: e.target.value })}
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-stone-700 block mb-1">Base Price (LKR)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={editItemData.basePrice}
+                    onChange={(e) => setEditItemData({ ...editItemData, basePrice: e.target.value })}
+                    className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-stone-700 block mb-1">Image URL</label>
+                  <input
+                    type="url"
+                    value={editItemData.imageUrl}
+                    onChange={(e) => setEditItemData({ ...editItemData, imageUrl: e.target.value })}
+                    className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditItemModal(false)}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-xl font-bold text-stone-700"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold">
+                  Update Menu Item
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Modal: New Variation */}
       {showVariationModal && selectedItemForVariation && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -581,6 +868,54 @@ export default function MenuManagement() {
                 </button>
                 <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded-xl font-bold">
                   Add Variation
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Variation */}
+      {showEditVariationModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-sm w-full rounded-3xl p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-stone-900 mb-1">Edit Portion Variation</h3>
+            <p className="text-xs text-stone-500 mb-3">Update size option details</p>
+            <form onSubmit={handleUpdateVariation} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Variation Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editVariationData.variationName}
+                  onChange={(e) => setEditVariationData({ ...editVariationData, variationName: e.target.value })}
+                  placeholder="e.g. Large (12-inch)"
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Additional Price (LKR)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  value={editVariationData.additionalPrice}
+                  onChange={(e) => setEditVariationData({ ...editVariationData, additionalPrice: Number(e.target.value) })}
+                  placeholder="500.00"
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditVariationModal(false)}
+                  className="px-3 py-1.5 bg-stone-100 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded-xl font-bold">
+                  Save Changes
                 </button>
               </div>
             </form>

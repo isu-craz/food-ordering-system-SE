@@ -78,10 +78,41 @@ axiosClient.interceptors.response.use(
       }
 
       // 4. Categories & Menu Items
-      if (url.includes('/categories') && method === 'GET') {
+      if (url.includes('/categories')) {
+        if (method === 'POST') {
+          const body = JSON.parse(error.config.data || '{}');
+          const newCat = {
+            categoryId: Date.now(),
+            branchId: body.branchId || 1,
+            categoryName: body.categoryName || 'New Category',
+            description: body.description || '',
+            status: 'ACTIVE',
+          };
+          mockCategories.push(newCat);
+          return { success: true, message: 'Category created successfully', data: newCat };
+        }
         return { success: true, data: mockCategories };
       }
-      if (url.includes('/menu-items') && method === 'GET') {
+      if (url.includes('/menu-items')) {
+        if (method === 'POST') {
+          const body = JSON.parse(error.config.data || '{}');
+          const cat = mockCategories.find(c => c.categoryId === Number(body.categoryId));
+          const newItem = {
+            itemId: Date.now(),
+            branchId: body.branchId || 1,
+            categoryId: Number(body.categoryId) || 1,
+            categoryName: cat ? cat.categoryName : 'Main Dishes',
+            foodName: body.foodName || 'New Food Item',
+            description: body.description || '',
+            basePrice: Number(body.basePrice) || 1200.0,
+            imageUrl: body.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500',
+            isAvailable: true,
+            status: 'ACTIVE',
+            variations: [],
+          };
+          mockMenuItems.push(newItem);
+          return { success: true, message: 'Menu item created successfully', data: newItem };
+        }
         return { success: true, data: mockMenuItems };
       }
 
