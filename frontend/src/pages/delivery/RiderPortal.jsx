@@ -14,6 +14,10 @@ import {
   Package,
   Bike,
   Trash2,
+  TrendingUp,
+  Award,
+  Calendar,
+  DollarSign,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -33,6 +37,14 @@ export default function RiderPortal() {
 
   // Selected delivery for View Details
   const [selectedDelivery, setSelectedDelivery] = useState(null);
+
+  // Performance Summary calculations
+  const completedToday = history.filter((h) => {
+    if (!h.deliveredAt) return false;
+    return new Date(h.deliveredAt).toDateString() === new Date().toDateString();
+  }).length;
+
+  const estimatedEarnings = history.length * 350;
 
 
   // =========================================================
@@ -324,6 +336,87 @@ export default function RiderPortal() {
             {riderStatus}
           </span>
 
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          RIDER PERFORMANCE METRICS
+      ====================================================== */}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+        {/* Active Deliveries */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+              Active Tasks
+            </span>
+            <div className="p-2 rounded-xl bg-orange-50 text-orange-600">
+              <Package className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-black text-stone-900">
+            {tasks.length}
+          </p>
+          <p className="text-[11px] text-stone-400 mt-1 font-medium">
+            Currently in queue
+          </p>
+        </div>
+
+        {/* Completed Deliveries */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+              Total Done
+            </span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-black text-stone-900">
+            {history.length}
+          </p>
+          <p className="text-[11px] text-stone-400 mt-1 font-medium">
+            Lifetime completions
+          </p>
+        </div>
+
+        {/* Delivered Today */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+              Today's Orders
+            </span>
+            <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
+              <Calendar className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-black text-stone-900">
+            {completedToday}
+          </p>
+          <p className="text-[11px] text-stone-400 mt-1 font-medium">
+            Delivered today
+          </p>
+        </div>
+
+        {/* Estimated Earnings */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+              Est. Earnings
+            </span>
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-black text-stone-900">
+            Rs. {estimatedEarnings.toLocaleString()}
+          </p>
+          <p className="text-[11px] text-stone-400 mt-1 font-medium">
+            Rs. 350 / completed drop
+          </p>
         </div>
 
       </div>
