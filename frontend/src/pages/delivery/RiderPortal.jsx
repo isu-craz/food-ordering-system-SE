@@ -13,6 +13,7 @@ import {
   Clock,
   Package,
   Bike,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -32,6 +33,7 @@ export default function RiderPortal() {
 
   // Selected delivery for View Details
   const [selectedDelivery, setSelectedDelivery] = useState(null);
+
 
   // =========================================================
   // LOAD RIDER DATA
@@ -69,6 +71,7 @@ export default function RiderPortal() {
     }
   };
 
+
   // =========================================================
   // UPDATE AVAILABILITY
   // =========================================================
@@ -91,6 +94,7 @@ export default function RiderPortal() {
       );
     }
   };
+
 
   // =========================================================
   // ACCEPT DELIVERY
@@ -115,6 +119,7 @@ export default function RiderPortal() {
     }
   };
 
+
   // =========================================================
   // OUT FOR DELIVERY
   // =========================================================
@@ -137,6 +142,7 @@ export default function RiderPortal() {
       );
     }
   };
+
 
   // =========================================================
   // MARK DELIVERED
@@ -171,6 +177,40 @@ export default function RiderPortal() {
     }
   };
 
+
+  // =========================================================
+  // DELETE / CANCEL DELIVERY
+  // =========================================================
+
+  const handleDeleteDelivery = async (deliveryId) => {
+    const confirmed = window.confirm(
+      'Are you sure you want to cancel this delivery?'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await axiosClient.delete(
+        `/delivery/tasks/${deliveryId}`
+      );
+
+      alert(
+        'Delivery cancelled successfully.'
+      );
+
+      await fetchRiderData();
+
+    } catch (err) {
+      alert(
+        err.response?.data?.message ||
+          'Error cancelling delivery'
+      );
+    }
+  };
+
+
   // =========================================================
   // STATUS DISPLAY
   // =========================================================
@@ -186,6 +226,7 @@ export default function RiderPortal() {
 
     return 'bg-rose-600 text-white';
   };
+
 
   // =========================================================
   // MAIN UI
@@ -336,16 +377,19 @@ export default function RiderPortal() {
       {loading ? (
 
         <div className="bg-white rounded-3xl border border-stone-200 py-20 text-center">
+
           <RefreshCw className="w-6 h-6 mx-auto mb-3 animate-spin text-stone-400" />
 
           <p className="text-sm text-stone-400">
             Loading delivery information...
           </p>
+
         </div>
 
       ) : (
 
         <>
+
           {/* =================================================
               ASSIGNED DELIVERIES
           ================================================== */}
@@ -536,22 +580,40 @@ export default function RiderPortal() {
 
                         <div className="flex flex-col sm:flex-row gap-2">
 
+                          {/* Accept + DELETE */}
+
                           {task.deliveryStatus === 'ASSIGNED' && (
 
-                            <button
-                              onClick={() =>
-                                handleAcceptTask(
-                                  task.deliveryId
-                                )
-                              }
-                              className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm"
-                            >
-                              <Check className="w-4 h-4" />
-                              Accept Delivery
-                            </button>
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleAcceptTask(
+                                    task.deliveryId
+                                  )
+                                }
+                                className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                              >
+                                <Check className="w-4 h-4" />
+                                Accept Delivery
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleDeleteDelivery(
+                                    task.deliveryId
+                                  )
+                                }
+                                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Cancel Delivery
+                              </button>
+                            </>
 
                           )}
 
+
+                          {/* Out for Delivery */}
 
                           {task.deliveryStatus === 'ACCEPTED' && (
 
@@ -569,6 +631,8 @@ export default function RiderPortal() {
 
                           )}
 
+
+                          {/* Delivered */}
 
                           {task.deliveryStatus ===
                             'OUT_FOR_DELIVERY' && (
