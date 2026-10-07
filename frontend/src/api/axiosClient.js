@@ -37,8 +37,13 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => response.data,
   async (error) => {
+    // If backend returns a client error (validation, auth, conflict), propagate to caller
+    if (error.response && [400, 401, 403, 409, 422].includes(error.response.status)) {
+      return Promise.reject(error);
+    }
+
     // If backend endpoint is missing, fails, or network error occurs, fallback seamlessly to Mock Data
-    if (!error.response || error.code === 'ERR_NETWORK' || error.response.status >= 400) {
+    if (!error.response || error.code === 'ERR_NETWORK' || error.response.status >= 404) {
       const url = error.config.url;
       const method = error.config.method.toUpperCase();
       console.warn(`[UI Standalone Mode] Backend offline or endpoint error at ${method} ${url}. Serving Mock Fallback.`);

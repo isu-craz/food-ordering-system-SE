@@ -1,0 +1,15 @@
+services:
+  mysqldb:
+    image: mysql:8.4
+    container_name: spice-avenue-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: spice_avenue_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - spice_avenue_mysql_data:/var/lib/mysql
+
+volumes:
+  spice_avenue_mysql_data:
