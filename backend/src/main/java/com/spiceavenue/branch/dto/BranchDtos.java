@@ -4,6 +4,8 @@ import com.spiceavenue.common.enums.EntityStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,12 +23,15 @@ public class BranchDtos {
     @Builder
     public static class CreateBranchRequest {
         @NotBlank(message = "Branch name is required")
+        @Size(min = 3, max = 100, message = "Branch name must be between 3 and 100 characters")
         private String branchName;
 
         @NotBlank(message = "Street address is required")
+        @Size(min = 5, max = 255, message = "Street address must be between 5 and 255 characters")
         private String streetAddress;
 
         @NotBlank(message = "Contact number is required")
+        @Pattern(regexp = "^(\\+94|0)[0-9]{9}$", message = "Contact number must be a valid 10-digit number (e.g. 0812345678 or +94771234567)")
         private String contactNumber;
 
         @NotBlank(message = "Email is required")

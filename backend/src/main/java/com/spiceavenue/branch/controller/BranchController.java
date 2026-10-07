@@ -49,7 +49,7 @@ public class BranchController {
     @PreAuthorize("hasAnyRole('OPS_MANAGER', 'ADMIN', 'BRANCH_MANAGER')")
     @Operation(summary = "Update branch details")
     public ResponseEntity<ApiResponse<BranchResponse>> updateBranch(
-            @PathVariable Long id, @RequestBody UpdateBranchRequest request) {
+            @PathVariable Long id, @Valid @RequestBody UpdateBranchRequest request) {
         BranchResponse branch = branchService.updateBranch(id, request);
         return ResponseEntity.ok(ApiResponse.success("Branch updated successfully", branch));
     }
